@@ -7,13 +7,16 @@ library(agricolae)
 
 a <- function(x) {colSums(abs(x))}
 
+dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO` <-
+  dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[,-c(4,5)]
+
 dfsumplacebo <-
   as.data.frame(do.call(rbind, lapply(dfposturalplacebofilt25hz, a)))
 dfsumpatch <-
   as.data.frame(do.call(rbind, lapply(dfposturalpatchfilt25hz, a)))
 
 
-dfsumpatch <- dfsumpatch[, -c(4, 5)]
+#dfsumpatch <- dfsumpatch[, -c(4, 5)]
 
 bloc <-
   c(
@@ -87,9 +90,9 @@ PDOO <- as.data.frame(dfpostfin[dfpostfin$test == "PDOO",])
 PGOO <- as.data.frame(dfpostfin[dfpostfin$test == "PGOO",])
 
 plot2POOx <- ggboxplot(
-  deuxPOF ,
+  deuxPOOrange ,
   x = "instant_mesure",
-  y = "sumcopy",
+  y = "rangecopx",
   color = "condition",
   palette = c("#00AFBB" , "#FC4E07"),
   order = c(
@@ -99,9 +102,9 @@ plot2POOx <- ggboxplot(
     "POST48"
   ),
   add = "jitter" ,
-  ylab = "sumpcopx",
+  ylab = "rangecopx",
   xlab = "instant_mesure" ,
-  title = "sumcopy2POF_patch_placebo"
+  title = "rangecopx2POO_patch_placebo"
 ) +
   stat_summary(
     geom = "point",
@@ -147,10 +150,6 @@ get_anova_table(res.aov1 , correction = "auto")
 
 name  <- c("temps" , "copx" , "copy")
 
-
-dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO` <-
-  dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[,-c(4,5)]
-
 dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt25hz , set_names , name)
 dfposturalpatchfilt25hz <- lapply(dfposturalpatchfilt25hz , set_names , name)
 
@@ -163,3 +162,45 @@ rangecopyPB <- as.data.frame(do.call(rbind , lapply(dfposturalplacebofilt25hz , 
 rangecopyP <- as.data.frame(do.call(rbind , lapply(dfposturalpatchfilt25hz , ry)))
 
 colnames(rangecopxPB) <- c("rangecopxpb")
+colnames(rangecopxP) <- c("rangecopxpatch")
+colnames(rangecopyPB) <- c("rangecopypb")
+colnames(rangecopyP) <- c("rangecopypatch")
+
+dfrangecopxyPB <- cbind(dfsumplacebo , rangecopxPB , rangecopyPB)
+dfrangecopxyPB <- dfrangecopxyPB[,-c(1, 2 , 3)]
+colnames(dfrangecopxyPB) <-
+  c("instant_mesure" ,
+    "sujet" ,
+    "condition" ,
+    "test" ,
+    "rangecopx" ,
+    "rangecopy")
+
+dfrangecopxypatch <- cbind(dfsumpatch , rangecopyP , rangecopxP)
+dfrangecopxypatch <- dfrangecopxypatch[,-c(1, 2 , 3)]
+testrem <-
+colnames(dfrangecopxypatch) <-
+  c("instant_mesure" ,
+    "sujet" ,
+    "condition" ,
+    "test" ,
+    "rangecopx" ,
+    "rangecopy")
+
+dfinrange <- rbind(dfrangecopxypatch , dfrangecopxyPB)
+
+deuxPOOrange <- as.data.frame(dfinrange[dfinrange$test == "2POO",])
+deuxPOFrange <- as.data.frame(dfinrange[dfinrange$test == "2POF",])
+PDOOrange <- as.data.frame(dfinrange[dfinrange$test == "PDOO",])
+PGOOrange <- as.data.frame(dfinrange[dfinrange$test == "PGOO",])
+
+oldeuxPOO <- identify_outliers(as.data.frame(deuxPOOrange$rangecopx))
+oldeuxPOO <- as.numeric(oldeuxPOO$`deuxPOOrange$rangecopx`)
+
+#remove outilers
+
+deuxPOOrange <-
+  deuxPOOrange[-which(
+    deuxPOOrange$rangecopx > quantile(deuxPOOrange$rangecopx)[4] + 1.5 * IQR(deuxPOOrange$rangecopx) |
+      deuxPOOrange$rangecopx < quantile(deuxPOOrange$rangecopx)[2] - 1.5 * IQR(deuxPOOrange$rangecopx)
+  ), ]
