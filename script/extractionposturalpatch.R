@@ -36,3 +36,6 @@ dfposturalpatchfilt <- lapply(dfposturalpatchfilt , removeZ)
 
 dfposturalpatchfilt <-lapply(dfposturalpatchfilt, removerow)
 dfposturalpatchfilt25hz <- lapply(dfposturalpatchfilt , filter25hz)
+
+ren <- c("temps" , "copx" , "copy")
+dfposturalpatchfilt25hz <- lapply(dfposturalpatchfilt25hz , setNames , ren)

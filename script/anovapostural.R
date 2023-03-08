@@ -8,7 +8,16 @@ library(agricolae)
 a <- function(x) {colSums(abs(x))}
 
 dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO` <-
-  dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[,-c(4,5)]
+  dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[, -c(4, 5)]
+
+dfposturalpatchfilt25hz <-
+  dfposturalpatchfilt25hz[!grepl("Alban" , names(dfposturalpatchfilt25hz))]
+dfposturalpatchfilt25hz <-
+  dfposturalpatchfilt25hz[!grepl("Sacha" , names(dfposturalpatchfilt25hz))]
+
+dfposturalplacebofilt25hz <- dfposturalplacebofilt25hz[!grepl("Alban" , names(dfposturalplacebofilt25hz))]
+dfposturalplacebofilt25hz <-
+  dfposturalplacebofilt25hz[!grepl("Sacha" , names(dfposturalplacebofilt25hz))]
 
 dfsumplacebo <-
   as.data.frame(do.call(rbind, lapply(dfposturalplacebofilt25hz, a)))
@@ -37,14 +46,14 @@ bloc <-
     "POST48" ,
     "POST48"
   )
-bloc1 <- c(rep(x = bloc , times = 18))
+bloc1 <- c(rep(x = bloc , times = 16))
 
 dfsumpatch <- cbind(dfsumpatch , bloc1)
 dfsumplacebo <- cbind(dfsumplacebo , bloc1)
 
 bloc2 <-
   c(
-    rep(x = "AL" , times = 16)  ,
+    #rep(x = "AL" , times = 16)  ,
     rep(x = "AB" , times = 16) ,
     rep(x = "BM" , times = 16) ,
     rep(x = "BR" , times = 16) ,
@@ -58,7 +67,7 @@ bloc2 <-
     rep(x = "PN" , times = 16) ,
     rep(x = "RF" , times = 16) ,
     rep(x = "RO" , times = 16) ,
-    rep(x = "SP" , times = 16) ,
+    #rep(x = "SP" , times = 16) ,
     rep(x = "SL" , times = 16) ,
     rep(x = "TM" , times = 16) ,
     rep(x = "VP" , times = 16)
@@ -89,10 +98,17 @@ deuxPOF <- as.data.frame(dfpostfin[dfpostfin$test == "2POF",])
 PDOO <- as.data.frame(dfpostfin[dfpostfin$test == "PDOO",])
 PGOO <- as.data.frame(dfpostfin[dfpostfin$test == "PGOO",])
 
+#removeoutliers
+
+df2 <- subset(deuxPOO, !sumcopx %in% identify_outliers(deuxPOO, "sumcopx")$sumcopx)
+
+identify_outliers(deuxPOO[3])
+
+
 plot2POOx <- ggboxplot(
-  deuxPOOrange ,
+  df2 ,
   x = "instant_mesure",
-  y = "rangecopx",
+  y = "sumcopx",
   color = "condition",
   palette = c("#00AFBB" , "#FC4E07"),
   order = c(
@@ -104,7 +120,7 @@ plot2POOx <- ggboxplot(
   add = "jitter" ,
   ylab = "rangecopx",
   xlab = "instant_mesure" ,
-  title = "rangecopx2POO_patch_placebo"
+  title = "pathswaycopx2POO_patch_placebo"
 ) +
   stat_summary(
     geom = "point",
@@ -140,7 +156,7 @@ dplyr::count(deuxPOO, time, sumcopx, sumcopy, instant_mesure, sujet, condition ,
 estnum <- deuxPOO %>% dplyr::group_by(sujet)
 
 res.aov1 <- rstatix::anova_test(
-  data = testnum , dv = sumcopx , wid = sujet ,
+  data = deuxPOO , dv = sumcopx , wid = sujet ,
   within = c(condition, instant_mesure) , effect.size = "ges",
   detailed = TRUE,
 )
@@ -198,9 +214,3 @@ oldeuxPOO <- identify_outliers(as.data.frame(deuxPOOrange$rangecopx))
 oldeuxPOO <- as.numeric(oldeuxPOO$`deuxPOOrange$rangecopx`)
 
 #remove outilers
-
-deuxPOOrange <-
-  deuxPOOrange[-which(
-    deuxPOOrange$rangecopx > quantile(deuxPOOrange$rangecopx)[4] + 1.5 * IQR(deuxPOOrange$rangecopx) |
-      deuxPOOrange$rangecopx < quantile(deuxPOOrange$rangecopx)[2] - 1.5 * IQR(deuxPOOrange$rangecopx)
-  ), ]
