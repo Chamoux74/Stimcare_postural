@@ -36,4 +36,5 @@ dfposturalplacebofilt <- lapply(dfposturalplacebofilt , removerow)
 filter25hz <- function(hz) {hz[seq(1, nrow(hz) , by = 26),]}
 dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt , filter25hz)
 
+ren <- c("temps" , "copx" , "copy")
 dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt25hz , setNames , ren)

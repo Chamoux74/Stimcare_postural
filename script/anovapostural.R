@@ -98,15 +98,56 @@ deuxPOF <- as.data.frame(dfpostfin[dfpostfin$test == "2POF",])
 PDOO <- as.data.frame(dfpostfin[dfpostfin$test == "PDOO",])
 PGOO <- as.data.frame(dfpostfin[dfpostfin$test == "PGOO",])
 
+#identify outliers
+
+mylist <- list(deuxPOO , deuxPOF , PDOO , PGOO)
+
+outl <-
+  function(o) {
+    o %>% group_by(condition , instant_mesure) %>% identify_outliers(sumcopx)
+  }
+outliersumcopx <- lapply(mylist , outl)
+names(outliersumcopx) <- c("deuxPOO" , "deuxPOF" , "PDOO" , "PGOO")
+
+outly <-
+  function(oy) {
+    oy %>% group_by(condition , instant_mesure) %>% identify_outliers(sumcopy)
+  }
+
+outliersumcopy <- lapply(mylist , outly)
+names(outliersumcopy) <- c("deuxPOO" , "deuxPOF" , "PDOO" , "PGOO")
+
 #removeoutliers
 
-df2 <- subset(deuxPOO, !sumcopx %in% identify_outliers(deuxPOO, "sumcopx")$sumcopx)
+df2 <-
+  subset(deuxPOF,
+         !sumcopx %in% identify_outliers(deuxPOF, "sumcopx")$sumcopx)
 
-identify_outliers(deuxPOO[3])
+#shapirotest
 
+shap <-
+  function(s) {
+    s %>% group_by(condition , instant_mesure) %>% shapiro_test(sumcopx)
+  }
+shapiro <- lapply(mylist, shap)
+names(shapiro) <- c("deuxPOO" , "deuxPOF" , "PDOO" , "PGOO")
+
+shapy <-
+  function(sy) {
+    sy %>% group_by(condition , instant_mesure) %>% shapiro_test(sumcopy)
+  }
+shapiroy <- lapply(mylist, shapy)
+names(shapiroy) <- c("deuxPOO" , "deuxPOF" , "PDOO" , "PGOO")
+
+#plot sumcop sans le post 48
+
+deuxPOFtest <- deuxPOF[!deuxPOF$instant_mesure == "POST48" , ]
+deuxPOOtest <- deuxPOO[!deuxPOO$instant_mesure == "POST48" , ]
+PDOOtest <- PDOO[!PDOO$instant_mesure == "POST48" , ]
+PGOOtest <- PGOO[!PGOO$instant_mesure == "POST48" , ]
 
 plot2POOx <- ggboxplot(
-  df2 ,
+  deuxPOFtest ,
   x = "instant_mesure",
   y = "sumcopx",
   color = "condition",
@@ -114,13 +155,13 @@ plot2POOx <- ggboxplot(
   order = c(
     "PRE" ,
     "MID" ,
-    "POST" ,
-    "POST48"
+    "POST" #,
+    #"POST48"
   ),
   add = "jitter" ,
-  ylab = "rangecopx",
+  ylab = "sumcopx",
   xlab = "instant_mesure" ,
-  title = "pathswaycopx2POO_patch_placebo"
+  title = "pathswaycopx2POF_patch_placebo"
 ) +
   stat_summary(
     geom = "point",
@@ -130,87 +171,173 @@ plot2POOx <- ggboxplot(
     position = position_dodge2(width = 0.75,
                                preserve = "single")
   ) +
-  stat_summary(
-    geom = "errorbar" ,
-    fun.data = mean_sd , aes(group = condition) ,
-    colour = "grey" ,
-    linetype = "dotted" ,
-    size = 1 , position = position_dodge2(width = 0.75,
-                                          preserve = "single")
-  )
+  theme_bw()
 
 plot2POOx
 
-testdf <- as.data.frame(apply(deuxPOO, 2, as.vector))
+#séparation de chaque test en placebo et patch pour analyse de friedman + plot indiv
 
-testnum <- deuxPOO %>% group_by(sujet)
+test <- deuxPOFtest[deuxPOFtest$condition == "placebo" , ]
+test1 <- deuxPOFtest[deuxPOFtest$condition == "patch", ]
 
-testnum %>%
-  spread(condition, instant_mesure) %>%
-  select(-grouped_id)
+test2 <- deuxPOOtest[deuxPOOtest$condition == "patch" , ]
+test3 <- deuxPOOtest[deuxPOOtest$condition == "placebo" , ]
 
-duplicated(testnum)
+test4 <- PDOOtest[PDOOtest$condition == "patch" , ]
+test5 <- PDOOtest[PDOOtest$condition == "placebo" , ]
 
-dplyr::count(deuxPOO, time, sumcopx, sumcopy, instant_mesure, sujet, condition , test , sort = TRUE)
+test6 <- PGOOtest[PGOOtest$condition == "patch" , ]
+test7 <- PGOOtest[PGOOtest$condition == "placebo" ,]
 
-estnum <- deuxPOO %>% dplyr::group_by(sujet)
+#plot variation indiv
 
-res.aov1 <- rstatix::anova_test(
-  data = deuxPOO , dv = sumcopx , wid = sujet ,
-  within = c(condition, instant_mesure) , effect.size = "ges",
-  detailed = TRUE,
-)
+test$instant_mesure <- factor(test$instant_mesure , levels = c("PRE", "MID", "POST"))
+test1$instant_mesure <- factor(test1$instant_mesure , levels = c("PRE", "MID", "POST"))
+
+plotest1 <- ggplot(test, aes(x = instant_mesure , y = sumcopx)) +
+  theme_bw() +
+  geom_line(
+    aes(
+      x = instant_mesure ,
+      group = sujet ,
+      color = as.factor(sujet)
+    ) ,
+    size = 0.6 ,
+    position = "identity" ,
+    linetype = "dashed"
+  ) +
+  geom_point(
+    aes(x = instant_mesure , group = sujet),
+    shape = 21,
+    colour = "black",
+    size = 2,
+    position = "identity"
+  ) +
+  geom_boxplot(
+    aes(x = instant_mesure , y = sumcopx) ,
+    width = .5,
+    fill = "white" , alpha = 0.3
+  ) +
+  stat_summary(
+    fun = mean,
+    shape = 17 ,
+    size = 1 ,
+    position = "identity",
+    color = "#ff0000"
+  ) +
+  scale_color_manual(
+    values = c(
+                "purple" ,
+                "#0416f5" ,
+                "#b00000" ,
+                "#19a3e8" ,
+                "#fd4c4c" ,
+                "#E7B800" ,
+                "#5ef11a" ,
+                "#c58ede" ,
+                "#3e020b" ,
+                "#febd02" ,
+                "#16161e" ,
+                "#24844b" ,
+                "#f604fd" ,
+                "#439bab" ,
+                "#6e711d" ,
+                "#156901"
+    )) +
+  labs(color = "sujet") +
+  stat_summary(
+    geom = "errorbar" ,
+    fun.data = mean_sd ,
+    colour = "black" ,
+    size = 1 ,
+    width = 0.2
+  ) +
+  labs(title = "pathswaycopx2POF_placebo")
+
+plotest
+
+#combiner graphique placebo et patch
+
+figure <- ggarrange(plotest , plotest1 , labels = c("A", "B"),
+                    ncol = 2 , nrow = 1 , common.legend = TRUE , legend = "right")
+
+figure
+
+#test friedman sans le post48
+
+test <- as.data.frame(test)
+
+my_listdf <-
+  list(
+    test = test ,
+    test1 = test1 ,
+    test2 = test2 ,
+    test3 = test3 ,
+    test4 = test4 ,
+    test5 = test5 ,
+    test6 = test6 ,
+    test7 = test7
+  )
+
+res.friedcopx <- function(f) {friedman_test(sumcopx ~ instant_mesure | sujet , data = f)}
+res.friedcopy <- function (f) {friedman_test(sumcopy ~ instant_mesure | sujet , data = f)}
+
+dfres.friedsumcopx <- lapply(my_listdf ,res.friedcopx) %>% bind_rows(.id = "my_listdf")
+dfres.friedsumcopy <- lapply(my_listdf ,res.friedcopy) %>% bind_rows(.id = "my_listdf")
 
 
-get_anova_table(res.aov1 , correction = "auto")
+pwc <- wilcox_test(sumcopx ~ instant_mesure , paired = TRUE, p.adjust.method = "bonferroni" , data = test)
+pwc
 
-name  <- c("temps" , "copx" , "copy")
+pwc2 <- deuxPOFtest %>% group_by(instant_mesure) %>% wilcox_test(sumcopx ~ condition ,
+                                                        paired = TRUE,
+                                                        p.adjust.method = "bonferroni")
+pwc2
 
-dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt25hz , set_names , name)
-dfposturalpatchfilt25hz <- lapply(dfposturalpatchfilt25hz , set_names , name)
+#plot 2POF avec pvalue
 
-rx <- function (r) {max(r$copx) - min(r$copx)}
-ry <- function (r) {max(r$copy) - min(r$copy)}
+pwc <- pwc %>% add_xy_position(x = "instant_mesure")
+pwc$xmin <- c(2 , 2 , 3)
+pwc$xmax <- c(3 , 1 , 1)
 
-rangecopxPB <- as.data.frame(do.call(rbind , lapply(dfposturalplacebofilt25hz , rx)))
-rangecopxP <- as.data.frame(do.call(rbind , lapply(dfposturalpatchfilt25hz , rx)))
-rangecopyPB <- as.data.frame(do.call(rbind , lapply(dfposturalplacebofilt25hz , ry)))
-rangecopyP <- as.data.frame(do.call(rbind , lapply(dfposturalpatchfilt25hz , ry)))
+pwc2 <- pwc2 %>% add_xy_position(x = "condition")
+pwc2$xmin <- c(2 , 2 , 2)
+pwc2$xmax <- c(2 , 2 , 2)
 
-colnames(rangecopxPB) <- c("rangecopxpb")
-colnames(rangecopxP) <- c("rangecopxpatch")
-colnames(rangecopyPB) <- c("rangecopypb")
-colnames(rangecopyP) <- c("rangecopypatch")
+plot2POOx +
+  stat_pvalue_manual(
+    pwc,
+    tip.length = 0 ,
+    hide.ns = TRUE ,
+    label = "p = {p.adj}"  , y.position = 16000 ,color = "#FC4E07"
+  ) +
+  stat_pvalue_manual(
+    pwc2,
+    tip.length = 0 ,
+    hide.ns = TRUE ,
+    label = "p = {p}"  , y.position = 100
+  )
 
-dfrangecopxyPB <- cbind(dfsumplacebo , rangecopxPB , rangecopyPB)
-dfrangecopxyPB <- dfrangecopxyPB[,-c(1, 2 , 3)]
-colnames(dfrangecopxyPB) <-
-  c("instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test" ,
-    "rangecopx" ,
-    "rangecopy")
+#wilcoxon différence entre les conditions sur chaque instant de mesure
 
-dfrangecopxypatch <- cbind(dfsumpatch , rangecopyP , rangecopxP)
-dfrangecopxypatch <- dfrangecopxypatch[,-c(1, 2 , 3)]
-testrem <-
-colnames(dfrangecopxypatch) <-
-  c("instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test" ,
-    "rangecopx" ,
-    "rangecopy")
+mylistwil <-
+  list(
+    deuxPOFtest = deuxPOFtest ,
+    deuxPOOtest = deuxPOOtest ,
+    PDOOtest = PDOOtest,
+    PGOOtest = PGOOtest
+  )
 
-dfinrange <- rbind(dfrangecopxypatch , dfrangecopxyPB)
+pwc2copx <- function (w) {
+  w %>% group_by(instant_mesure) %>% wilcox_test(sumcopx ~ condition ,
+                                                       paired = TRUE,
+                                                       p.adjust.method = "bonferroni")}
+pwc2copy <- function (w) {
+  w %>% group_by(instant_mesure) %>% wilcox_test(sumcopy ~ condition ,
+                                                 paired = TRUE,
+                                                 p.adjust.method = "bonferroni")}
 
-deuxPOOrange <- as.data.frame(dfinrange[dfinrange$test == "2POO",])
-deuxPOFrange <- as.data.frame(dfinrange[dfinrange$test == "2POF",])
-PDOOrange <- as.data.frame(dfinrange[dfinrange$test == "PDOO",])
-PGOOrange <- as.data.frame(dfinrange[dfinrange$test == "PGOO",])
+dfres.wilcoxsumcopx <- lapply(mylistwil ,pwc2copx) %>% bind_rows(.id = "mylistwil")
 
-oldeuxPOO <- identify_outliers(as.data.frame(deuxPOOrange$rangecopx))
-oldeuxPOO <- as.numeric(oldeuxPOO$`deuxPOOrange$rangecopx`)
+dfres.wilcoxsumcopy <- lapply(mylistwil ,pwc2copy) %>% bind_rows(.id = "mylistwil")
 
-#remove outilers
