@@ -175,26 +175,12 @@ plot2POOx <- ggboxplot(
 
 plot2POOx
 
-#séparation de chaque test en placebo et patch pour analyse de friedman + plot indiv
-
-test <- deuxPOFtest[deuxPOFtest$condition == "placebo" , ]
-test1 <- deuxPOFtest[deuxPOFtest$condition == "patch", ]
-
-test2 <- deuxPOOtest[deuxPOOtest$condition == "patch" , ]
-test3 <- deuxPOOtest[deuxPOOtest$condition == "placebo" , ]
-
-test4 <- PDOOtest[PDOOtest$condition == "patch" , ]
-test5 <- PDOOtest[PDOOtest$condition == "placebo" , ]
-
-test6 <- PGOOtest[PGOOtest$condition == "patch" , ]
-test7 <- PGOOtest[PGOOtest$condition == "placebo" ,]
-
 #plot variation indiv
 
-test$instant_mesure <- factor(test$instant_mesure , levels = c("PRE", "MID", "POST"))
-test1$instant_mesure <- factor(test1$instant_mesure , levels = c("PRE", "MID", "POST"))
+deuxPOFtest$instant_mesure <- factor(deuxPOFtest$instant_mesure , levels = c("PRE", "MID", "POST"))
 
-plotest1 <- ggplot(test, aes(x = instant_mesure , y = sumcopx)) +
+
+plotest1 <- ggplot(deuxPOFtest, aes(x = instant_mesure , y = sumcopx)) +
   theme_bw() +
   geom_line(
     aes(
@@ -206,6 +192,12 @@ plotest1 <- ggplot(test, aes(x = instant_mesure , y = sumcopx)) +
     position = "identity" ,
     linetype = "dashed"
   ) +
+  stat_summary(
+    geom = "errorbar" ,
+    fun.data = mean_sd ,
+    colour = "black" ,
+    size = 1 ,
+    width = 0.2) +
   geom_point(
     aes(x = instant_mesure , group = sujet),
     shape = 21,
@@ -245,23 +237,11 @@ plotest1 <- ggplot(test, aes(x = instant_mesure , y = sumcopx)) +
                 "#156901"
     )) +
   labs(color = "sujet") +
-  stat_summary(
-    geom = "errorbar" ,
-    fun.data = mean_sd ,
-    colour = "black" ,
-    size = 1 ,
-    width = 0.2
-  ) +
-  labs(title = "pathswaycopx2POF_placebo")
+  labs(title = "pathswaycopx2POF_individual_variation") +
+  facet_wrap(vars(condition))
 
-plotest
+plotest1
 
-#combiner graphique placebo et patch
-
-figure <- ggarrange(plotest , plotest1 , labels = c("A", "B"),
-                    ncol = 2 , nrow = 1 , common.legend = TRUE , legend = "right")
-
-figure
 
 #test friedman sans le post48
 

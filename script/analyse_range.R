@@ -36,6 +36,41 @@ testrem <-
 
 dfinrange <- rbind(dfrangecopxypatch , dfrangecopxyPB)
 
+#plot wrap grid en fonction des test
+
+plotrangecopxtest <- ggboxplot(
+  dfinrange ,
+  x = "instant_mesure",
+  y = "rangecopx",
+  color = "condition",
+  palette = c("#00AFBB" , "#FC4E07"),
+  order = c(
+    "PRE" ,
+    "MID" ,
+    "POST" ,
+    "POST48"
+  ),
+  add = "jitter" ,
+  ylab = "rangecopx",
+  xlab = "instant_mesure" ,
+  title = "sumrangecopx_patch_placebo-test"
+) +
+  stat_summary(
+    geom = "point",
+    fun.y = mean , aes(group = condition) ,
+    shape = 20 ,
+    size = 4 ,
+    position = position_dodge2(width = 0.75,
+                               preserve = "single")
+  ) +
+  theme_bw() +
+  facet_wrap(vars(test))+
+
+
+plotrangecopxtest
+
+#séparation de chaque datafram en fonction des tests
+
 deuxPOO_range <- as.data.frame(dfinrange[dfinrange$test == "2POO",])
 deuxPOF_range <- as.data.frame(dfinrange[dfinrange$test == "2POF",])
 PDOO_range <- as.data.frame(dfinrange[dfinrange$test == "PDOO",])
@@ -183,16 +218,17 @@ caption = paste(my_results[[my_listname[[1]]]][[8]])
 #plot tout les graphs indiv en les groupant par test mais avec un ggarrange
 #pour avoir placebo et patch sur la même figure
 
-placebo <- function (pb){filter(pb , condition == "placebo")}
-patch <- function (pa){filter(pa , condition == "patch")}
+fact <-
+  function(f) {
+    f[[1]] <-
+      factor(f[[1]] , levels = c("PRE", "MID", "POST" , "POST48"))
+  }
 
-my_listrangeplacebo <- lapply (my_listrange , placebo)
-my_listrangepatch <- lapply (my_listrange , patch)
+my_listrange <- lapply(my_listrange , fact)
 
-test$instant_mesure <- factor(test$instant_mesure , levels = c("PRE", "MID", "POST"))
 
-plotindivlist <- lapply(seq_along(my_listrangeplacebo) , function(ind) {
-  ggplot(my_listrangeplacebo [[ind]], aes(x = instant_mesure , y = rangecopx)) +
+plotindivlist <- lapply(seq_along(my_listrange) , function(ind) {
+  ggplot(my_listrange[[ind]], aes(x = instant_mesure , y = rangecopx)) +
     theme_bw() +
     geom_line(
       aes(
@@ -210,6 +246,14 @@ plotindivlist <- lapply(seq_along(my_listrangeplacebo) , function(ind) {
       colour = "black",
       size = 2,
       position = "identity"
+    ) +
+    labs(color = "sujet") +
+    stat_summary(
+      geom = "errorbar" ,
+      fun.data = mean_sd ,
+      colour = "black" ,
+      size = 1 ,
+      width = 0.2
     ) +
     geom_boxplot(
       aes(x = instant_mesure , y = rangecopx) ,
@@ -243,16 +287,9 @@ plotindivlist <- lapply(seq_along(my_listrangeplacebo) , function(ind) {
                  "#6e711d" ,
                  "#156901"
       )
-    ) +
-    labs(color = "sujet") +
-    stat_summary(
-      geom = "errorbar" ,
-      fun.data = mean_sd ,
-      colour = "black" ,
-      size = 1 ,
-      width = 0.2
-    ) +
-    ggtitle(names(my_listrangeplacebo)[ind])
+    )  +
+    ggtitle(names(my_listrange)[ind]) +
+    facet_wrap(vars(condition))
 })
 
 plotest
