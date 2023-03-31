@@ -88,8 +88,22 @@ strplacebo <- str_extract(string = row.names(dfsumplacebo), pattern = "(.{4}$)")
 dfsumpatch <- cbind(dfsumpatch , strpatch)
 dfsumplacebo <- cbind(dfsumplacebo , strplacebo)
 
-colnames(dfsumpatch) <- c("time" , "sumcopx" , "sumcopy" , "instant_mesure" , "sujet" , "condition" , "test")
-colnames(dfsumplacebo) <- c("time" , "sumcopx" , "sumcopy" , "instant_mesure" , "sujet" , "condition" , "test")
+colnames(dfsumpatch) <-
+  c("time" ,
+    "sumcopx" ,
+    "sumcopy" ,
+    "instant_mesure" ,
+    "sujet" ,
+    "condition" ,
+    "test")
+colnames(dfsumplacebo) <-
+  c("time" ,
+    "sumcopx" ,
+    "sumcopy" ,
+    "instant_mesure" ,
+    "sujet" ,
+    "condition" ,
+    "test")
 
 dfpostfin <- rbind(dfsumpatch , dfsumplacebo)
 
@@ -139,15 +153,152 @@ shapy <-
 shapiroy <- lapply(mylist, shapy)
 names(shapiroy) <- c("deuxPOO" , "deuxPOF" , "PDOO" , "PGOO")
 
-#plot sumcop sans le post 48
+#filtre sans le post 48
 
 deuxPOFtest <- deuxPOF[!deuxPOF$instant_mesure == "POST48" , ]
 deuxPOOtest <- deuxPOO[!deuxPOO$instant_mesure == "POST48" , ]
 PDOOtest <- PDOO[!PDOO$instant_mesure == "POST48" , ]
 PGOOtest <- PGOO[!PGOO$instant_mesure == "POST48" , ]
 
-plot2POOx <- ggboxplot(
-  deuxPOFtest ,
+#filtre sans le sujet BR
+
+tdeuxPOF <- filter(deuxPOFtest , !sujet == "BR")
+
+# plot facewrap sans les pvalue, les pvalues sont dans les dataframe :
+#dfres...
+
+plotsumcopxwrap <- ggboxplot( data = dfpostfin ,
+  x = "instant_mesure",
+  y = "sumcopy",
+  color = "condition",
+  palette = c("#00AFBB" , "#FC4E07"),
+  order = c("PRE" ,
+            "MID" ,
+            "POST" ,
+            "POST48"), width = 0.5 ,
+  add = "jitter" , size = 0.6 , shape = "condition" ,
+  ylab = "sumcopy",
+  xlab = "instant_mesure" ,
+  title = "sumcopy_patch_placebo-test"
+) +
+  stat_summary(
+    geom = "point",
+    fun.y = mean ,
+    aes(group = condition) ,
+    shape = 20 ,
+    size = 3 ,
+    position = position_dodge2(width = 0.75,
+                               preserve = "single")
+  ) +
+  theme_bw() + theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    strip.background = element_rect(color = "black" , fill = "#373737")
+    ,
+    strip.text = element_text(
+      color = "white" ,
+      face = "bold" ,
+      size = 8
+    ) ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  ) +
+  facet_wrap(vars(test) , scales = "free_y")
+
+plotsumcopxwrap
+
+#plot indiv wrap
+
+dfpostfin$instant_mesure <-
+  factor(dfpostfin$instant_mesure ,
+         levels = c("PRE" , "MID" , "POST" , "POST48"))
+
+plotindivsum <- ggplot(dfpostfin, aes(x = instant_mesure , y = sumcopy)) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.text.x = element_text(angle = 45 , vjust = 0.7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    strip.background = element_rect(color = "black" , fill = "#373737")
+    ,
+    strip.text = element_text(
+      color = "white" ,
+      face = "bold" ,
+      size = 8
+    ) ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  ) +
+  geom_line(
+    aes(
+      x = instant_mesure ,
+      group = sujet ,
+      color = as.factor(sujet)
+    ) ,
+    size = 0.4 ,
+    position = "identity" ,
+    linetype = "dashed"
+  ) +
+  stat_summary(
+    geom = "errorbar" ,
+    fun.data = mean_sd ,
+    colour = "black" ,
+    size = 0.5 ,
+    width = 0.2) +
+  geom_point(
+    aes(x = instant_mesure , group = sujet),
+    shape = 21,
+    colour = "black",
+    size = 1.1,
+    position = "identity"
+  ) +
+  geom_boxplot(
+    aes(x = instant_mesure , y = sumcopy) ,
+    width = .3,
+    fill = "white" , alpha = 0.3
+  ) +
+  stat_summary(
+    fun = mean,
+    shape = 17 ,
+    size = 0.5 ,
+    position = "identity",
+    color = "#ff0000"
+  ) +
+  scale_color_manual(
+    values = c(
+      "purple" ,
+      "#0416f5" ,
+      "#b00000" ,
+      "#19a3e8" ,
+      "#fd4c4c" ,
+      "#E7B800" ,
+      "#5ef11a" ,
+      "#c58ede" ,
+      "#3e020b" ,
+      "#febd02" ,
+      "#16161e" ,
+      "#24844b" ,
+      "#f604fd" ,
+      "#439bab" ,
+      "#6e711d" ,
+      "#156901"
+    )) +
+  labs(color = "sujet") +
+  labs(title = "sumcopy_individual_variation-test") +
+  facet_grid(condition ~ test , scales = "free_y")
+
+plotindivsum
+
+#plot 2POF sumcopx
+
+plot2POFx <- ggboxplot(
+  deuxPOF ,
   x = "instant_mesure",
   y = "sumcopx",
   color = "condition",
@@ -155,10 +306,10 @@ plot2POOx <- ggboxplot(
   order = c(
     "PRE" ,
     "MID" ,
-    "POST" #,
-    #"POST48"
+    "POST" ,
+    "POST48"
   ),
-  add = "jitter" ,
+  add = "jitter" , size = 0.6 , shape = "condition" ,
   ylab = "sumcopx",
   xlab = "instant_mesure" ,
   title = "pathswaycopx2POF_patch_placebo"
@@ -171,17 +322,42 @@ plot2POOx <- ggboxplot(
     position = position_dodge2(width = 0.75,
                                preserve = "single")
   ) +
-  theme_bw()
+  theme_bw() + theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6) ,
+    legend.background = element_rect(color = "black" , size = 0.1)
+  )
 
-plot2POOx
+plot2POFx
 
 #plot variation indiv
 
-deuxPOFtest$instant_mesure <- factor(deuxPOFtest$instant_mesure , levels = c("PRE", "MID", "POST"))
+deuxPOFtest$instant_mesure <-
+  factor(deuxPOFtest$instant_mesure , levels = c("PRE", "MID", "POST"))
+deuxPOF$instant_mesure <-
+  factor(deuxPOF$instant_mesure , levels = c("PRE", "MID", "POST" , "POST48"))
 
-
-plotest1 <- ggplot(deuxPOFtest, aes(x = instant_mesure , y = sumcopx)) +
+plotest1 <- ggplot(deuxPOF, aes(x = instant_mesure , y = sumcopx)) +
   theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
+    axis.text = element_text(size = 7) ,
+    axis.title = element_text(size = 8 , face = "bold") ,
+    strip.background = element_rect(color = "black" , fill = "#373737")
+    ,
+    strip.text = element_text(
+      color = "white" ,
+      face = "bold" ,
+      size = 8
+    ) ,
+    legend.position = "right" ,
+    legend.title = element_text(size = 8 , face = "bold") ,
+    legend.text = element_text(size = 6)
+  ) +
   geom_line(
     aes(
       x = instant_mesure ,
@@ -237,7 +413,7 @@ plotest1 <- ggplot(deuxPOFtest, aes(x = instant_mesure , y = sumcopx)) +
                 "#156901"
     )) +
   labs(color = "sujet") +
-  labs(title = "pathswaycopx2POF_individual_variation") +
+  labs(title = "pathswaycopx2POF_individual_variation_PRE/MID/POST/POST48") +
   facet_wrap(vars(condition))
 
 plotest1
@@ -245,51 +421,85 @@ plotest1
 
 #test friedman sans le post48
 
-test <- as.data.frame(test)
-
-my_listdf <-
+mylistout <-
   list(
-    test = test ,
-    test1 = test1 ,
-    test2 = test2 ,
-    test3 = test3 ,
-    test4 = test4 ,
-    test5 = test5 ,
-    test6 = test6 ,
-    test7 = test7
+    deuxPOF = deuxPOF ,
+    deuxPOO = deuxPOO ,
+    PDOO = PDOO ,
+    PGOO = PGOO
   )
 
-res.friedcopx <- function(f) {friedman_test(sumcopx ~ instant_mesure | sujet , data = f)}
-res.friedcopy <- function (f) {friedman_test(sumcopy ~ instant_mesure | sujet , data = f)}
+mylist <-
+  list(
+    deuxPOFtest = deuxPOFtest ,
+    deuxPOOtest = deuxPOOtest ,
+    PDOOtest = PDOOtest,
+    PGOOtest = PGOOtest ,
+    tdeuxPOF = tdeuxPOF
+  )
 
-dfres.friedsumcopx <- lapply(my_listdf ,res.friedcopx) %>% bind_rows(.id = "my_listdf")
-dfres.friedsumcopy <- lapply(my_listdf ,res.friedcopy) %>% bind_rows(.id = "my_listdf")
+res.friedcopxpb <-
+  function(f) {
+    f %>% filter(condition == "placebo") %>%  friedman_test(sumcopx ~ instant_mesure |
+                                                        sujet)
+  }
 
+res.friedcopxpatch <-
+  function(f) {
+    f %>% filter(condition == "patch") %>%  friedman_test(sumcopx ~ instant_mesure |
+                                                              sujet)
+  }
 
-pwc <- wilcox_test(sumcopx ~ instant_mesure , paired = TRUE, p.adjust.method = "bonferroni" , data = test)
+res.friedcopypb <-
+  function (f) {
+    f %>% filter(condition == "placebo") %>% friedman_test(sumcopy ~ instant_mesure |
+                                                             sujet)
+  }
+
+res.friedcopypatch <-
+  function (f) {
+    f %>% filter(condition == "patch") %>% friedman_test(sumcopy ~ instant_mesure |
+                                                             sujet)
+  }
+
+dfres.friedsumcopxpb <-
+  lapply(mylist , res.friedcopxpb) %>% bind_rows(.id = "my_listdf")
+dfres.friedsumcopxpatch <-
+  lapply(mylist , res.friedcopxpatch) %>% bind_rows(.id = "my_listdf")
+
+dfres.friedsumcopypb <-
+  lapply(mylist , res.friedcopypb) %>% bind_rows(.id = "my_listdf")
+dfres.friedsumcopypatch <-
+  lapply(mylist , res.friedcopypatch) %>% bind_rows(.id = "my_listdf")
+
+pwc <-
+  deuxPOFtest %>% group_by(condition) %>%  wilcox_test(sumcopx ~ instant_mesure ,
+                              paired = TRUE,
+                              p.adjust.method = "bonferroni")
 pwc
 
-pwc2 <- deuxPOFtest %>% group_by(instant_mesure) %>% wilcox_test(sumcopx ~ condition ,
-                                                        paired = TRUE,
-                                                        p.adjust.method = "bonferroni")
+pwc2 <-
+  deuxPOF %>% group_by(instant_mesure) %>% wilcox_test(sumcopx ~ condition ,
+                                                           paired = TRUE,
+                                                           p.adjust.method = "bonferroni")
 pwc2
 
 #plot 2POF avec pvalue
 
 pwc <- pwc %>% add_xy_position(x = "instant_mesure")
-pwc$xmin <- c(2 , 2 , 3)
-pwc$xmax <- c(3 , 1 , 1)
+pwc$xmin <- c(1 , 1 , 2 , 1.2 , 1 , 2)
+pwc$xmax <- c(2 , 3 , 3 , 2.2 , 3, 3)
 
 pwc2 <- pwc2 %>% add_xy_position(x = "condition")
-pwc2$xmin <- c(2 , 2 , 2)
-pwc2$xmax <- c(2 , 2 , 2)
+pwc2$xmin <- c(2 , 2 , 4 , 2)
+pwc2$xmax <- c(2 , 2 , 4 , 2)
 
 plot2POOx +
   stat_pvalue_manual(
     pwc,
     tip.length = 0 ,
     hide.ns = TRUE ,
-    label = "p = {p.adj}"  , y.position = 16000 ,color = "#FC4E07"
+    label = "p = {p.adj}"  , y.position = 14300 ,color = "#FC4E07"
   ) +
   stat_pvalue_manual(
     pwc2,
@@ -300,13 +510,6 @@ plot2POOx +
 
 #wilcoxon différence entre les conditions sur chaque instant de mesure
 
-mylistwil <-
-  list(
-    deuxPOFtest = deuxPOFtest ,
-    deuxPOOtest = deuxPOOtest ,
-    PDOOtest = PDOOtest,
-    PGOOtest = PGOOtest
-  )
 
 pwc2copx <- function (w) {
   w %>% group_by(instant_mesure) %>% wilcox_test(sumcopx ~ condition ,
@@ -317,7 +520,21 @@ pwc2copy <- function (w) {
                                                  paired = TRUE,
                                                  p.adjust.method = "bonferroni")}
 
-dfres.wilcoxsumcopx <- lapply(mylistwil ,pwc2copx) %>% bind_rows(.id = "mylistwil")
+dfres.wilcoxsumcopx <- lapply(mylistout ,pwc2copx) %>% bind_rows(.id = "mylistwil")
 
-dfres.wilcoxsumcopy <- lapply(mylistwil ,pwc2copy) %>% bind_rows(.id = "mylistwil")
+dfres.wilcoxsumcopy <- lapply(mylistout ,pwc2copy) %>% bind_rows(.id = "mylistwil")
 
+#wilcoxon groupé par conditon
+
+pwc2copx <- function (w) {
+  w %>% group_by(condition) %>% wilcox_test(sumcopx ~ instant_mesure ,
+                                                 paired = TRUE,
+                                                 p.adjust.method = "bonferroni")}
+pwc2copy <- function (w) {
+  w %>% group_by(condition) %>% wilcox_test(sumcopy ~ instant_mesure ,
+                                                 paired = TRUE,
+                                                 p.adjust.method = "bonferroni")}
+
+dfres.wilcoxsumcopxC <- lapply(mylistout ,pwc2copx) %>% bind_rows(.id = "mylistwil")
+
+dfres.wilcoxsumcopyC <- lapply(mylistout ,pwc2copy) %>% bind_rows(.id = "mylistwil")
