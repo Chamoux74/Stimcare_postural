@@ -52,7 +52,8 @@ PDOO_range <- as.data.frame(dfinrange[dfinrange$test == "PDOO", ])
 PGOO_range <- as.data.frame(dfinrange[dfinrange$test == "PGOO", ])
 
 rangelist <-
-  list(deuxPOOrange , deuxPOFrange , PDOOrange , PGOOrange)
+  list(deuxPOO_range , deuxPOF_range , PDOO_range , PGOO_range)
+
 
 outlrange <-
   function(or) {
@@ -444,3 +445,7 @@ plotindivlist <- lapply(seq_along(my_listrange) , function(ind) {
 })
 
 plotest
+
+
+
+

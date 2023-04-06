@@ -97,25 +97,25 @@ mytheme = list(
 
 #test plot trajet du COP + aire
 
-plottest <-
-  ggplot(
-    data = test ,
-    aes(x = copx, y = copy) #, group = 1)
-  ) +
-  geom_path(color = "black" ,
-            linejoin = "round" ,
-            linewidth = 0.8) +
-  stat_ellipse(
-    geom = "polygon" ,
-    color = "#505050" ,
-    linetype = 5 ,
-    level = 0.95 ,
-    linewidth = 1.5 ,
-    alpha = 0.13
-  ) +
-  mytheme
-
-plottest
+# plottest <-
+#   ggplot(
+#     data = test ,
+#     aes(x = copx, y = copy) #, group = 1)
+#   ) +
+#   geom_path(color = "black" ,
+#             linejoin = "round" ,
+#             linewidth = 0.8) +
+#   stat_ellipse(
+#     geom = "polygon" ,
+#     color = "#505050" ,
+#     linetype = 5 ,
+#     level = 0.95 ,
+#     linewidth = 1.5 ,
+#     alpha = 0.13
+#   ) +
+#   mytheme
+#
+# plottest
 
 #calcule de l'aire à partir de la fonction stat_ellipse de R
 
@@ -165,29 +165,26 @@ extractplotpatch <-
     pb <- ggplot_build(dat)
     el <-
       pb$data[[2]][c("x", "y")] #extraction du deuxième élément de la list de tout les éléments de chaque plot
-    crt <- MASS::cov.trob(el)$center # Center of ellipse
+    ctr <- MASS::cov.trob(el)$center # Center of ellipse
     dist2center <- sqrt(rowSums((t(t(
       el
     ) - ctr)) ^ 2)) # Calculate distance to center from each point on the ellipse
     return(as.data.frame(c(
       el = el ,
-      crt = crt ,
+      ctr = ctr ,
       dist2center = dist2center
     ))) #retourne une liste de tout les éléments de la fonction
   })
 
 extractplotplacebo <-
-  lapply(listplotplacebo , function (dat) {
+  lapply(listplotplacebo , function(dat) {
     pb <- ggplot_build(dat)
-    el <-
-      pb$data[[2]][c("x", "y")] #extraction du deuxième élément de la list de tout les éléments de chaque plot
-    crt <- MASS::cov.trob(el)$center # Center of ellipse
-    dist2center <- sqrt(rowSums((t(t(
-      el
-    ) - ctr)) ^ 2)) # Calculate distance to center from each point on the ellipse
+    el <- pb$data[[2]][c("x", "y")] #extraction du deuxième élément de la list de tout les éléments de chaque plot
+    ctr <- MASS::cov.trob(el)$center # Center of ellipse
+    dist2center <- sqrt(rowSums((t(t(el) - ctr)) ^ 2)) # Calculate distance to center from each point on the ellipse
     return(as.data.frame(c(
       el = el ,
-      crt = crt ,
+      ctr = ctr ,
       dist2center = dist2center
     ))) #retourne une liste de tout les éléments de la fonction
   })
@@ -254,6 +251,10 @@ ggqqplot <- ggqqplot(dfairetot , "area", ggtheme = theme_bw()) +
     ggtitle("qqplotarea")
 
 ggqqplot
+
+# filtre sans sujet PN
+
+dfairetotfilt <- filter(dfairetot , !sujet == "PN")
 
 #plot
 
@@ -385,15 +386,7 @@ plotindivarea <- ggplot(dfairetotfilt, aes(x = instant_mesure , y = area)) +
 
 plotindivarea
 
-# filtre sans sujet PN
-
-dfairetotfilt <- filter(dfairetot , !sujet == "PN")
-
 # analyse non paramétrique
-
-dffriedpb <- dfairetotfilt %>% filter(condition == "placebo")
-
-#friedman_test(data = dffriedpb , area ~ instant_mesure | sujet)
 
 reswilc <- dfairetotfilt %>% group_by(condition , test) %>%  wilcox_test(area ~ instant_mesure ,
                                                      paired = TRUE,
