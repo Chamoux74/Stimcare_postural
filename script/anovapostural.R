@@ -46,7 +46,7 @@ bloc <-
     "POST48" ,
     "POST48"
   )
-bloc1 <- c(rep(x = bloc , times = 16))
+bloc1 <- c(rep(x = bloc , times = 17))
 
 dfsumpatch <- cbind(dfsumpatch , bloc1)
 dfsumplacebo <- cbind(dfsumplacebo , bloc1)
@@ -62,12 +62,12 @@ bloc2 <-
     rep(x = "GM" , times = 16) ,
     rep(x = "GS" , times = 16) ,
     rep(x = "JS" , times = 16) ,
+    rep(x = "MA" , times = 16) ,
     rep(x = "MF" , times = 16) ,
     rep(x = "MD" , times = 16) ,
     rep(x = "PN" , times = 16) ,
     rep(x = "RF" , times = 16) ,
     rep(x = "RO" , times = 16) ,
-    #rep(x = "SP" , times = 16) ,
     rep(x = "SL" , times = 16) ,
     rep(x = "TM" , times = 16) ,
     rep(x = "VP" , times = 16)
@@ -111,6 +111,14 @@ deuxPOO <- as.data.frame(dfpostfin[dfpostfin$test == "2POO",])
 deuxPOF <- as.data.frame(dfpostfin[dfpostfin$test == "2POF",])
 PDOO <- as.data.frame(dfpostfin[dfpostfin$test == "PDOO",])
 PGOO <- as.data.frame(dfpostfin[dfpostfin$test == "PGOO",])
+
+bobo <-
+  deuxPOF %>% aggregate(
+    sumcopx ~ condition + instant_mesure ,
+    FUN = function (x) {
+      mean(x)
+    }
+  )
 
 #identify outliers
 
@@ -159,6 +167,14 @@ deuxPOFtest <- deuxPOF[!deuxPOF$instant_mesure == "POST48" , ]
 deuxPOOtest <- deuxPOO[!deuxPOO$instant_mesure == "POST48" , ]
 PDOOtest <- PDOO[!PDOO$instant_mesure == "POST48" , ]
 PGOOtest <- PGOO[!PGOO$instant_mesure == "POST48" , ]
+
+#filtre sans MD
+
+deuxPOFtest <- deuxPOFtest %>% filter(!sujet == "MD")
+deuxPOOtest <- deuxPOOtest %>% filter(!sujet == "MD")
+PDOOtest <- PDOOtest %>%  filter(!sujet == "MD")
+PGOOtest <- PGOOtest %>%  filter(!sujet == "MD")
+
 
 #filtre sans le sujet BR
 
@@ -287,7 +303,8 @@ plotindivsum <- ggplot(dfpostfin, aes(x = instant_mesure , y = sumcopy)) +
       "#f604fd" ,
       "#439bab" ,
       "#6e711d" ,
-      "#156901"
+      "#156901" ,
+      "#62fdff"
     )) +
   labs(color = "sujet") +
   labs(title = "sumcopy_individual_variation-test") +
@@ -410,7 +427,8 @@ plotest1 <- ggplot(deuxPOF, aes(x = instant_mesure , y = sumcopx)) +
                 "#f604fd" ,
                 "#439bab" ,
                 "#6e711d" ,
-                "#156901"
+                "#156901" ,
+                "#62fdff"
     )) +
   labs(color = "sujet") +
   labs(title = "pathswaycopx2POF_individual_variation_PRE/MID/POST/POST48") +
@@ -494,7 +512,7 @@ pwc2 <- pwc2 %>% add_xy_position(x = "condition")
 pwc2$xmin <- c(2 , 2 , 4 , 2)
 pwc2$xmax <- c(2 , 2 , 4 , 2)
 
-plot2POOx +
+plot2POFx +
   stat_pvalue_manual(
     pwc,
     tip.length = 0 ,
