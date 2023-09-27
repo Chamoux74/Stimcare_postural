@@ -67,17 +67,24 @@ dfairepubpb <-
 #mise en forme dataframe
 
 dfairepub <- as.data.frame(t(dfairepub))
-colnames(dfairepub)[1] <- "area95%"
+colnames(dfairepub)[1] <- "area95"
 
 dfairepubpb <- as.data.frame(t(dfairepubpb))
-colnames(dfairepubpb)[1] <- "area95%"
+colnames(dfairepubpb)[1] <- "area95"
 
-dfairepatpb <- cbind(dfairepub , dfairepubpb)
-colnames(dfairepatpb)[1:2] <- c("area95%patch" , "area95%placebo")
+dfaire95 <- rbind(dfairepub, dfairepubpb)
+dfaire95 <- cbind(dfpostfin, dfaire95)
+dfaire95 <- filter(dfaire95 ,instant_mesure != "POST48")
 
-#export en csv
+dfaire95 <- filter(dfaire95, sujet != "GS")
+dfaire95 <- filter(dfaire95, sujet != "MD")
+dfaire95 <- filter(dfaire95, sujet != "AL")
 
-write.csv2(dfairepatpb, file="dataaire_literature.csv")
+dfaire95F <- filter(dfaire95, test == "2POF")
+dfaire950 <- filter(dfaire95, test == "2POO")
+
+dfaire95F <- select(dfaire95F, area95)
+dfaire950 <- select(dfaire950, area95)
 
 #theme qui met tout en blanc derrière et titre centré en gras
 mytheme = list(
@@ -94,30 +101,6 @@ mytheme = list(
       plot.title = element_text(face = "bold", hjust = 0.5, size = 13)
     )
 )
-
-#test plot trajet du COP + aire
-
-# plottest <-
-#   ggplot(
-#     data = test ,
-#     aes(x = copx, y = copy) #, group = 1)
-#   ) +
-#   geom_path(color = "black" ,
-#             linejoin = "round" ,
-#             linewidth = 0.8) +
-#   stat_ellipse(
-#     geom = "polygon" ,
-#     color = "#505050" ,
-#     linetype = 5 ,
-#     level = 0.95 ,
-#     linewidth = 1.5 ,
-#     alpha = 0.13
-#   ) +
-#   mytheme
-#
-# plottest
-
-#calcule de l'aire à partir de la fonction stat_ellipse de R
 
 # plot de toute la liste de dataframe
 
@@ -158,7 +141,6 @@ listplotplacebo <- lapply(dfposturalplacebofilt25hz , function(plot) {
     mytheme })
 
 #extraction des données de l'ellipse crée par stat_ellipse
-
 
 extractplotpatch <-
   lapply(listplotpatch , function (dat) {
@@ -207,71 +189,32 @@ dfaireellipseplacebo <-
 dfaireellipsepatch <- as.data.frame(t(dfaireellipsepatch))
 dfaireellipseplacebo <- as.data.frame(t(dfaireellipseplacebo))
 
-dftotaireellispe <- cbind(dfaireellipsepatch , dfaireellipseplacebo)
+colnames(dfaireellipsepatch) <- "aire"
+colnames(dfaireellipseplacebo) <- "aire"
 
-colnames(dftotaireellispe)[1:2] <- c("airepatch" , "aireplacebo")
+dfaire <- rbind(dfaireellipsepatch, dfaireellipseplacebo)
+dfaire <- cbind(dfpostfin, dfaire)
+dfaire <- filter(dfaire,instant_mesure != "POST48")
 
-#extraction csv
+dfaire <- filter(dfaire, sujet != "GS")
+dfaire <- filter(dfaire, sujet != "MD")
+dfaire <- filter(dfaire, sujet != "AL")
 
-write.csv2(dftotaireellispe, file="dataaire_ellipse.csv")
+dfaireF <- filter(dfaire, test == "2POF")
+dfaire0 <- filter(dfaire, test == "2POO")
 
-#mise en forme data pour analyse aire_ellipse
+dfaireF <- select(dfaireF, aire)
+dfaire0 <- select(dfaire0, aire)
 
-dfaireellipsepatch <- cbind(dfaireellipsepatch , bloc1 , bloc2 , patch , strpatch)
-dfaireellipseplacebo <- cbind(dfaireellipseplacebo , bloc1 , bloc2 , placebo , strplacebo)
+#filter to add on dfanalysis
 
-colnames(dfaireellipsepatch) <-
-  c("area",
-    "instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test")
-colnames(dfaireellipseplacebo) <-
-  c("area",
-    "instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test")
-
-dfairetot <- rbind(dfaireellipsepatch , dfaireellipseplacebo)
-
-# identify outliers
-
-dfout <-
-  dfairetot %>% group_by(condition , instant_mesure) %>% identify_outliers(area)
-
-# test normalité
-
-dfnorm <- dfairetot %>% group_by(condition , instant_mesure , test) %>% shapiro_test(area)
-
-#qqplot
-
-ggqqplot <- ggqqplot(dfairetot , "area", ggtheme = theme_bw()) +
-    facet_grid(instant_mesure ~ condition + test , scales = "free_y") +
-    ggtitle("qqplotarea")
-
-ggqqplot
-
-# filtre sans sujet PN
-
-dfairetotfilt <- filter(dfairetot , !sujet == "PN")
+dfanalysisF <- cbind(dfanalysisF, dfaire95F, dfaireF)
+dfanalysisO <- cbind(dfanalysisO, dfaire0, dfaire950)
 
 #plot
 
-plotareawrap <- ggboxplot( data = dfairetotfilt ,
-                              x = "instant_mesure",
-                              y = "area",
-                              color = "condition",
-                              palette = c("#00AFBB" , "#FC4E07"),
-                              order = c("PRE" ,
-                                        "MID" ,
-                                        "POST" ,
-                                        "POST48"), width = 0.5 ,
-                              add = "jitter" , size = 0.6 , shape = "condition" ,
-                              ylab = "aire",
-                              xlab = "instant_mesure" ,
-                              title = "area_patch_placebo-test"
-) +
+plotareawrap <- ggplot(aes(x=instant_mesure, y = area95), data = dfanalysisF) +
+  geom_boxplot(aes(fill= condition)) +
   stat_summary(
     geom = "point",
     fun.y = mean ,
@@ -296,149 +239,6 @@ plotareawrap <- ggboxplot( data = dfairetotfilt ,
     legend.title = element_text(size = 8 , face = "bold") ,
     legend.text = element_text(size = 6) ,
     legend.background = element_rect(color = "black" , size = 0.1)
-  ) +
-  facet_wrap(vars(test) , scales = "free_y")
+  )
 
 plotareawrap
-
-#plot variation indiv
-
-dfairetotfilt$instant_mesure <-
-  factor(dfairetotfilt$instant_mesure ,
-         levels = c("PRE" , "MID" , "POST" , "POST48"))
-
-plotindivarea <- ggplot(dfairetotfilt, aes(x = instant_mesure , y = area)) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
-    axis.text = element_text(size = 7) ,
-    axis.text.x = element_text(angle = 45 , vjust = 0.7) ,
-    axis.title = element_text(size = 8 , face = "bold") ,
-    strip.background = element_rect(color = "black" , fill = "#373737")
-    ,
-    strip.text = element_text(
-      color = "white" ,
-      face = "bold" ,
-      size = 8
-    ) ,
-    legend.position = "right" ,
-    legend.title = element_text(size = 8 , face = "bold") ,
-    legend.text = element_text(size = 6) ,
-    legend.background = element_rect(color = "black" , size = 0.1)
-  ) +
-  geom_line(
-    aes(
-      x = instant_mesure ,
-      group = sujet ,
-      color = as.factor(sujet)
-    ) ,
-    size = 0.4 ,
-    position = "identity" ,
-    linetype = "dashed"
-  ) +
-  stat_summary(
-    geom = "errorbar" ,
-    fun.data = mean_sd ,
-    colour = "black" ,
-    size = 0.5 ,
-    width = 0.2) +
-  geom_point(
-    aes(x = instant_mesure , group = sujet),
-    shape = 21,
-    colour = "black",
-    size = 1.1,
-    position = "identity"
-  ) +
-  geom_boxplot(
-    aes(x = instant_mesure , y = area) ,
-    width = .3,
-    fill = "white" , alpha = 0.3
-  ) +
-  stat_summary(
-    fun = mean,
-    shape = 17 ,
-    size = 0.5 ,
-    position = "identity",
-    color = "#ff0000"
-  ) +
-  scale_color_manual(
-    values = c(
-      "purple" ,
-      "#0416f5" ,
-      "#b00000" ,
-      "#19a3e8" ,
-      "#fd4c4c" ,
-      "#E7B800" ,
-      "#5ef11a" ,
-      "#c58ede" ,
-      "#3e020b" ,
-      "#febd02" ,
-      "#16161e" ,
-      "#24844b" ,
-      "#f604fd" ,
-      "#439bab" ,
-      "#6e711d" ,
-      "#156901"
-    )) +
-  labs(color = "sujet") +
-  labs(title = "area_individual_variation-test") +
-  facet_grid(condition ~ test , scales = "free_y")
-
-plotindivarea
-
-# analyse non paramétrique
-
-reswilc <- dfairetotfilt %>% group_by(condition , test) %>%  wilcox_test(area ~ instant_mesure ,
-                                                     paired = TRUE,
-                                                     p.adjust.method = "bonferroni")
-
-reswilcinstant <- dfairetotfilt %>% group_by(instant_mesure , test) %>%  wilcox_test(area ~ condition ,
-                                                   paired = TRUE,
-                                                   p.adjust.method = "bonferroni")
-
-#mise en forme donnée calculé formule littérature
-
-dfairepub <- cbind(dfairepub , bloc1 , bloc2 , patch , strpatch)
-dfairepubpb <- cbind(dfairepubpb , bloc1 , bloc2 , placebo , strplacebo)
-
-colnames(dfairepub) <-
-  c("area",
-    "instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test")
-colnames(dfairepubpb) <-
-  c("area",
-    "instant_mesure" ,
-    "sujet" ,
-    "condition" ,
-    "test")
-
-dfairepubtot <- rbind(dfairepub , dfairepubpb)
-
-# identify outliers
-
-dfout1 <-
-  dfairepubtot %>% group_by(condition , instant_mesure) %>% identify_outliers(area)
-
-# test normalité
-
-dfnorm1 <- dfairepubtot %>% group_by(condition , instant_mesure , test) %>% shapiro_test(area)
-
-#qqplot
-
-ggqqplot1 <- ggqqplot(dfairepubtot , "area", ggtheme = theme_bw()) +
-  facet_grid(instant_mesure ~ condition + test , scales = "free_y") +
-  ggtitle("qqplotarea")
-
-ggqqplot1
-
-#analyse non paramétrique je pense que l'analyse paramétrique pourrait ce faire
-
-reswilc1 <- dfairepubtot %>% group_by(condition , test) %>%  wilcox_test(area ~ instant_mesure ,
-                                                                         paired = TRUE,
-                                                                         p.adjust.method = "bonferroni")
-
-reswilcinstant1 <- dfairepubtot %>% group_by(instant_mesure , test) %>%  wilcox_test(area ~ condition ,
-                                                                                     paired = TRUE,
-                                                                                     p.adjust.method = "bonferroni")

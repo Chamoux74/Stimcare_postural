@@ -7,7 +7,7 @@ library(dplyr)
 
 posturalplacebo <-
   list.files(
-    path = "C:/Users/maxch/Git/POSTURAL/Data/PLACEBO",
+    path = "Data/PLACEBO",
     pattern = "\\.csv",
     all.files = TRUE,
     full.names = TRUE

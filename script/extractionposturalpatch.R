@@ -6,7 +6,7 @@ library(dplyr)
 
 posturalpatch <-
   list.files(
-    path = "C:/Users/maxch/Git/POSTURAL/Data/PATCH",
+    path = "Data/PATCH",
     pattern = "\\.csv",
     all.files = TRUE,
     full.names = TRUE
