@@ -3,7 +3,8 @@ library(readr)
 library(data.table)
 library(purrr)
 library(dplyr)
-
+library(gsignal)
+library(seewave)
 
 posturalplacebo <-
   list.files(
@@ -33,8 +34,53 @@ dfposturalplacebofilt <- lapply(dfposturalplacebofilt , removeZ)
 removerow <- function(r) {r[c(9001 : 29001), ]}
 dfposturalplacebofilt <- lapply(dfposturalplacebofilt , removerow)
 
-filter25hz <- function(hz) {hz[seq(1, nrow(hz) , by = 26),]}
-dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt , filter25hz)
-
 ren <- c("temps" , "copx" , "copy")
-dfposturalplacebofilt25hz <- lapply(dfposturalplacebofilt25hz , setNames , ren)
+dfposturalplacebofilt <- lapply(dfposturalplacebofilt , setNames , ren)
+
+# Sample rate (in Hz)
+fs <- 1000
+
+# Cutoff frequency for the low-pass filter (in Hz)
+cutoff_frequency <- 10
+#butterworth_filter <- butter(4, cutoff_frequency / (fs / 2), type = "low")
+# Create a Butterworth low-pass filter
+dfposturalBFpb <-
+  lapply(dfposturalplacebofilt, function (b) {
+    butterworth_filter <-
+      butter(4, (cutoff_frequency / (fs /2)), type = "low")
+    filtered_data <-
+      as.data.frame(lapply(b, function (colm)
+        filtfilt(butterworth_filter, colm)))
+    return(filtered_data)
+  })
+
+#reduce from 1000hz to 100Hz
+
+dfpostural100HzBFpb <- lapply(dfposturalBFpb, function(df) {
+  df_decimated <-
+    as.data.frame(lapply(df, function(col)
+      decimate(col, 10)))
+  return(df_decimated)
+})
+
+# centered value for limit error due of foot position
+bob <- function(dataframe, column_names) {
+  for (col_name in column_names) {
+    if (!col_name %in% colnames(dataframe)) {
+      stop(paste("La colonne", col_name, "n'existe pas dans le dataframe."))
+    }
+
+    # Calcul de la moyenne de la colonne spécifiée
+    col_mean <- mean(dataframe[[col_name]], na.rm = TRUE)
+
+    # Soustraction de la moyenne à chaque valeur de la colonne
+    dataframe[[col_name]] <- dataframe[[col_name]] - col_mean
+  }
+
+  return(dataframe)
+}
+
+dfpostural100HzBFpb <-
+  lapply(dfpostural100HzBFpb, function(bobi) {
+    bob(bobi, c("copx", "copy"))
+  })

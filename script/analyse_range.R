@@ -8,13 +8,13 @@ ry <- function (r) {
 }
 
 rangecopxPB <-
-  as.data.frame(do.call(rbind , lapply(dfposturalplacebofilt25hz , rx)))
+  as.data.frame(do.call(rbind , lapply(dfpostural100HzBFpb , rx)))
 rangecopxP <-
-  as.data.frame(do.call(rbind , lapply(dfposturalpatchfilt25hz , rx)))
+  as.data.frame(do.call(rbind , lapply(dfpostural100HzBFpat , rx)))
 rangecopyPB <-
-  as.data.frame(do.call(rbind , lapply(dfposturalplacebofilt25hz , ry)))
+  as.data.frame(do.call(rbind , lapply(dfpostural100HzBFpb , ry)))
 rangecopyP <-
-  as.data.frame(do.call(rbind , lapply(dfposturalpatchfilt25hz , ry)))
+  as.data.frame(do.call(rbind , lapply(dfpostural100HzBFpat, ry)))
 
 colnames(rangecopxPB) <- c("rangecopxpb")
 colnames(rangecopxP) <- c("rangecopxpatch")
@@ -61,38 +61,3 @@ dfanalysisF <- filter(dfanalysis, test == "2POF")
 
 dfanalysisF$condition <- factor(dfanalysisF$condition, levels = c("placebo", "patch"))
 dfanalysisO$condition <- factor(dfanalysisO$condition, levels = c("placebo", "patch"))
-
-#plot wrap grid en fonction des test
-
-dfanalysisF %>% group_by(condition,instant_mesure) %>% shapiro_test(rangecopy)
-dfanalysisO %>% group_by(condition,instant_mesure) %>% shapiro_test(rangecopx)
-
-plotrangecopxtest <- ggplot(aes(x = instant_mesure, y = rangecopy), data= dfanalysisO) +
-  geom_boxplot(aes(fill= condition)) +
-  stat_summary(
-    geom = "point",
-    fun.y = mean ,
-    aes(group = condition) ,
-    shape = 20 ,
-    size = 3 ,
-    position = position_dodge2(width = 0.75,
-                               preserve = "single")
-  ) +
-  theme_bw() + theme(
-    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
-    axis.text = element_text(size = 7) ,
-    axis.title = element_text(size = 8 , face = "bold") ,
-    strip.background = element_rect(color = "black" , fill = "#373737")
-    ,
-    strip.text = element_text(
-      color = "white" ,
-      face = "bold" ,
-      size = 8
-    ) ,
-    legend.position = "right" ,
-    legend.title = element_text(size = 8 , face = "bold") ,
-    legend.text = element_text(size = 6) ,
-    legend.background = element_rect(color = "black" , size = 0.1)
-  )
-
-plotrangecopxtest

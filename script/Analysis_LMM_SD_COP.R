@@ -6,9 +6,9 @@ library(base)
 b <- function(x) {sapply(x, sd)}
 
 dfsdcop_pb <-
-  as.data.frame(do.call(rbind, lapply(dfposturalplacebofilt25hz, b)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpb, b)))
 dfsdcop_p <-
-  as.data.frame(do.call(rbind, lapply(dfposturalpatchfilt25hz, b)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpat, b)))
 
 colnames(dfsdcop_pb) <- c("time", "sdcopx", "sdcopy")
 colnames(dfsdcop_p)<- c("time", "sdcopx", "sdcopy")
@@ -33,51 +33,22 @@ dfsdO <- select(dfsdO,sdcopx, sdcopy)
 dfanalysisF <- cbind(dfanalysisF, dfsdF)
 dfanalysisO <- cbind(dfanalysisO, dfsdO)
 
-# graphical visualization
-
-ggplot(aes(x=instant_mesure, y = sdcopx), data = dfanalysisO) +
-  geom_boxplot(aes(fill= condition)) +
-  stat_summary(
-    geom = "point",
-    fun.y = mean ,
-    aes(group = condition) ,
-    shape = 20 ,
-    size = 3 ,
-    position = position_dodge2(width = 0.75,
-                               preserve = "single")
-  ) +
-  theme_bw() + theme(
-    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
-    axis.text = element_text(size = 7) ,
-    axis.title = element_text(size = 8 , face = "bold") ,
-    strip.background = element_rect(color = "black" , fill = "#373737")
-    ,
-    strip.text = element_text(
-      color = "white" ,
-      face = "bold" ,
-      size = 8
-    ) ,
-    legend.position = "right" ,
-    legend.title = element_text(size = 8 , face = "bold") ,
-    legend.text = element_text(size = 6) ,
-    legend.background = element_rect(color = "black" , size = 0.1)
-  )
 
 #mixed model
 
 M5 <-
-  lme4::lmer(
-    sdcopx ~ condition * instant_mesure + (1 |
+  lmer(
+    sdcopy ~ condition * instant_mesure + (1 |
                                              sujet),
     data = dfanalysisO,
     REML = T
   )
 
 M6 <-
-  lme4::lmer(
+  rlmer(
     sdcopy ~ condition * instant_mesure + (1 |
                                              sujet),
-    data = dfanalysisO,
+    data = dfanalysisF,
     REML = T
   )
 
@@ -86,11 +57,11 @@ tab_model(M6)
 ##lmer model
 
 residus <- residuals(M6, type="pearson",scaled=TRUE)
-dfanalysisO$residus<-residus
-outliers::grubbs.test(dfanalysisO$residus, type = 10, opposite = FALSE, two.sided = FALSE)
+dfanalysisF$residus<-residus
+outliers::grubbs.test(dfanalysisF$residus, type = 10, opposite = FALSE, two.sided = FALSE)
 
 ##clean
-DFclean <- dfanalysisO
+DFclean <- dfanalysisF
 
 data.frame()->valeur.influentes
 while(outliers::grubbs.test(DFclean$residus, type = 10, opposite = FALSE, two.sided = FALSE)$p.value <0.05)  {

@@ -12,13 +12,13 @@ library(car)
 diffx <- function(d) {
   diff(d$copx)
 }
-diffcopx <- lapply(dfposturalpatchfilt25hz , diffx)
+diffcopx <- lapply(dfpostural100HzBFpat , diffx)
 diffcopx <- lapply(diffcopx , as.data.frame)
 
 diffy <- function (dy) {
   diff(dy$copy)
 }
-diffcopy <- lapply(dfposturalpatchfilt25hz , diffy)
+diffcopy <- lapply(dfpostural100HzBFpat , diffy)
 diffcopy <- lapply(diffcopy , as.data.frame)
 
 diffxy <- mapply(cbind , diffcopx , diffcopy , SIMPLIFY = FALSE)
@@ -26,15 +26,12 @@ diffxy <- mapply(cbind , diffcopx , diffcopy , SIMPLIFY = FALSE)
 nam <- c("diffcopx" , "diffcopy")
 diffxy <- lapply(diffxy , setNames , nam)
 
-
-test <- as.data.frame(dfposturalpatchfilt25hz$`Alban LE Gall-2022.09.28-13.33.43PREA2POO`[, 2:3])
-
 #fonction calcule d'aire publication
 
 covpub <- function (bob) {covmat <- cov(bob[,2:3])}
 
-test1 <- lapply(dfposturalpatchfilt25hz , covpub)
-test2 <- lapply(dfposturalplacebofilt25hz , covpub)
+test1 <- lapply(dfpostural100HzBFpat , covpub)
+test2 <- lapply(dfpostural100HzBFpb , covpub)
 
 #calcule eig pour toute la liste valeur
 
@@ -104,7 +101,7 @@ mytheme = list(
 
 # plot de toute la liste de dataframe
 
-listplotpatch <- lapply(dfposturalpatchfilt25hz , function(plot) {
+listplotpatch <- lapply(dfpostural100HzBFpat , function(plot) {
   ggplot(
     data = plot ,
     aes(x = copx, y = copy) #, group = 1)
@@ -122,7 +119,7 @@ listplotpatch <- lapply(dfposturalpatchfilt25hz , function(plot) {
   ) +
   mytheme })
 
-listplotplacebo <- lapply(dfposturalplacebofilt25hz , function(plot) {
+listplotplacebo <- lapply(dfpostural100HzBFpb , function(plot) {
   ggplot(
     data = plot ,
     aes(x = copx, y = copy) #, group = 1)
@@ -210,35 +207,3 @@ dfaire0 <- select(dfaire0, aire)
 
 dfanalysisF <- cbind(dfanalysisF, dfaire95F, dfaireF)
 dfanalysisO <- cbind(dfanalysisO, dfaire0, dfaire950)
-
-#plot
-
-plotareawrap <- ggplot(aes(x=instant_mesure, y = area95), data = dfanalysisF) +
-  geom_boxplot(aes(fill= condition)) +
-  stat_summary(
-    geom = "point",
-    fun.y = mean ,
-    aes(group = condition) ,
-    shape = 20 ,
-    size = 3 ,
-    position = position_dodge2(width = 0.75,
-                               preserve = "single")
-  ) +
-  theme_bw() + theme(
-    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
-    axis.text = element_text(size = 7) ,
-    axis.title = element_text(size = 8 , face = "bold") ,
-    strip.background = element_rect(color = "black" , fill = "#373737")
-    ,
-    strip.text = element_text(
-      color = "white" ,
-      face = "bold" ,
-      size = 8
-    ) ,
-    legend.position = "right" ,
-    legend.title = element_text(size = 8 , face = "bold") ,
-    legend.text = element_text(size = 6) ,
-    legend.background = element_rect(color = "black" , size = 0.1)
-  )
-
-plotareawrap

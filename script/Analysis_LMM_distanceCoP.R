@@ -1,11 +1,10 @@
-# calcule
 
-c <- function(x) {mean(sqrt((x$copy^2) +(x$copx^2)))}
+c <- function(x) {mean(sqrt((x$copy^2)+(x$copx^2)))}
 
 dfdistance_pb <-
-  as.data.frame(do.call(rbind, lapply(dfposturalplacebofilt25hz, c)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpb, c)))
 dfdistance_p <-
-  as.data.frame(do.call(rbind, lapply(dfposturalpatchfilt25hz, c)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpat, c)))
 
 dfdistance <- rbind(dfdistance_p, dfdistance_pb)
 colnames(dfdistance) <- "distance"
@@ -27,44 +26,28 @@ dfdistanceO <- select(dfdistanceO,distance)
 dfanalysisF <- cbind(dfanalysisF, dfdistanceF)
 dfanalysisO <- cbind(dfanalysisO, dfdistanceO)
 
-# graphical visualization
-
-ggplot(aes(x=instant_mesure, y = distance), data = dfanalysisF) +
-  geom_boxplot(aes(fill= condition)) +
-  stat_summary(
-    geom = "point",
-    fun.y = mean ,
-    aes(group = condition) ,
-    shape = 20 ,
-    size = 3 ,
-    position = position_dodge2(width = 0.75,
-                               preserve = "single")
-  ) +
-  theme_bw() + theme(
-    plot.title = element_text(hjust = 0.5 , size = 12 , face = "bold") ,
-    axis.text = element_text(size = 7) ,
-    axis.title = element_text(size = 8 , face = "bold") ,
-    strip.background = element_rect(color = "black" , fill = "#373737")
-    ,
-    strip.text = element_text(
-      color = "white" ,
-      face = "bold" ,
-      size = 8
-    ) ,
-    legend.position = "right" ,
-    legend.title = element_text(size = 8 , face = "bold") ,
-    legend.text = element_text(size = 6) ,
-    legend.background = element_rect(color = "black" , size = 0.1)
-  )
-
 #mixed model
 
 M7 <-
-  lme4::lmer(
+  lmer(
     distance ~ condition * instant_mesure + (1 |
                                              sujet),
     data = dfanalysisF,
     REML = T
   )
 
+ summary(M7)
+
+ tab_model(M7)
 # after testing no effect in any model
+
+ emm_options(lmer.df = "satterthwaite")
+ emmeans_out <- emmeans(M7, ~instant_mesure*condition, weights = "show.levels")
+ emmeans_out
+ plot(emmeans_out)
+ pair1 <- pairs(emmeans_out, adjust ="holm")
+ summary(pair1)
+ pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm")
+ summary(pair2)
+ pair3 <- pairs(emmeans_out, by = c("condition"), adjust = "holm")
+ summary(pair3)

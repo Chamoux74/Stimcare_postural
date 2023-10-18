@@ -14,6 +14,7 @@ library(nlme)
 library(xtable)
 library(robustlmm)
 
+
 #analyse uniquement sur test 2P
 
 dfanalysis <- filter(dfpostfin, test == "2POO")
@@ -55,32 +56,15 @@ dfanalysisO <- filter(dfanalysisO, sujet != "MD")
 dfanalysisO <- filter(dfanalysisO, sujet != "AL")
 
 
-modele_mixte1 <-
-  lme4::lmer(
-    sumcopy ~ condition * instant_mesure + (1 |
-                                   sujet),
+M1 <-
+  lmer(
+    sumcopx ~ condition * instant_mesure + (1 | sujet),
     data = dfanalysisF,
     REML = T
   )
 
-modele_mixte1_1 <-
-  rlmer(
-    sumcopy ~ condition * instant_mesure + (1 |sujet),
-    data = dfanalysisF,
-    REML = T
-  )
+tab_model(M1)
 
-modele_mixte1_2 <- lmer(sumcopy ~ condition * instant_mesure + (1 |
-                                                                   condition:sujet),
-                         data = dfanalysisF,
-                         REML = T)
-
-write.csv(dfanalysisF, file = "C:/Users/maxch/Nextcloud2/Data_STIMCARE/ANALYSE_Combines/sumcopOF.csv")
-
-summary(modele_mixte1_1)
-summary(modele_mixte1)
-
-tab_model(modele_mixte1)
 
 #pas d'effet quelques soit le model sauf OF sumcopy et sumcopx PRE vs MID avec tendance
 #uniquement pour placebo
@@ -91,12 +75,12 @@ anova(modele_mixte1, modele_mixte1_1)
 
 ##lmer model
 
-residus <- residuals(modele_mixte1_2, type="pearson",scaled=TRUE)
-dfanalysisF$residus<-residus
-outliers::grubbs.test(dfanalysisF$residus, type = 10, opposite = FALSE, two.sided = FALSE)
+residus <- residuals(M2, type="pearson",scaled=TRUE)
+dfanalysisO$residus<-residus
+outliers::grubbs.test(dfanalysisO$residus, type = 10, opposite = FALSE, two.sided = FALSE)
 
 ##clean
-DFclean <- dfanalysisF
+DFclean <- dfanalysisO
 
 data.frame()->valeur.influentes
 while(outliers::grubbs.test(DFclean$residus, type = 10, opposite = FALSE, two.sided = FALSE)$p.value <0.05)  {
@@ -107,7 +91,7 @@ while(outliers::grubbs.test(DFclean$residus, type = 10, opposite = FALSE, two.si
 
 ## normality test for residuals
 
-n1<-shapiro.test(dfanalysisF$residus)
+n1<-shapiro.test(dfanalysisO$residus)
 n2<-shapiro.test(DFclean$residus)
 r<-data.frame(W=c(n1$statistic, n2$statistic),
               p=c(n1$p.value, n2$p.value))
@@ -132,7 +116,7 @@ pr01 <- profile(aleatoires)
 xyplot(pr01, aspect = 1.3, layout=c(3,1))
 xyplot(pr01, aspect = 1.3, layout=c(3,1), absVal=T)
 
-r_int<- ranef(modele_mixte1)$sujet$"(Intercept)"
+r_int<- ranef(M2)$sujet$"(Intercept)"
 qqnorm(r_int)
 shapiro.test(r_int)
 
@@ -168,12 +152,12 @@ anova(modele_mixte1, type= 3)
 #second method to calculate interraction contrast
 
 emm_options(lmer.df = "satterthwaite")
-emmeans_out <- emmeans(modele_mixte1_2, ~instant_mesure*condition, weights = "show.levels")
+emmeans_out <- emmeans(M1, ~instant_mesure*condition, weights = "show.levels")
 emmeans_out
 plot(emmeans_out)
 pair1 <- pairs(emmeans_out, adjust ="holm")
 summary(pair1)
-pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm", )
+pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm")
 summary(pair2)
 pair3 <- pairs(emmeans_out, by = c("condition"), adjust = "holm")
 summary(pair3)

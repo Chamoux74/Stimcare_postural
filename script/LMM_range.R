@@ -33,36 +33,41 @@ p
 
 #modelemixed who working
 
-M1 <-
-  lme4::lmer(
+M7 <-
+  rlmer(
     rangecopx ~ condition * instant_mesure + (1 |
                                               sujet),
-    data = dfanalysisF,
+    data = dfanalysisO,
     REML = T
   )
 
-M2 <-
-  lme4::lmer(
+M8 <-
+  lmer(
     rangecopy ~ condition * instant_mesure + (1 |
                                                 sujet),
-    data = DFclean,
+    data = dfanalysisO,
     REML = T
   )
 
-M3 <- lmer(rangecopy ~ condition * instant_mesure + (1 |
+M9 <- rlmer(rangecopx ~ condition * instant_mesure + (1 |
                                                                   sujet),
-                        data = DFclean,
+                        data = dfanalysisF,
                         REML = T)
 
-tab_model(M3)
+M10 <- lmer(rangecopy ~ condition * instant_mesure + (1 |
+                                                        sujet),
+            data = dfanalysisF,
+            REML = T)
 
-anova(M2,M3)
+
+summary(M9)
+tab_model(M10)
 
 #outlier and application condition
 
 ##lmer model
 
-residus <- residuals(M3, type="pearson",scaled=TRUE)
+residus <- residuals(M10, type="pearson",scaled=TRUE)
 dfanalysisF$residus<-residus
 outliers::grubbs.test(dfanalysisF$residus, type = 10, opposite = FALSE, two.sided = FALSE)
 
@@ -103,7 +108,7 @@ pr01 <- profile(aleatoires)
 xyplot(pr01, aspect = 1.3, layout=c(3,1))
 xyplot(pr01, aspect = 1.3, layout=c(3,1), absVal=T)
 
-r_int<- ranef(M2)$sujet$"(Intercept)"
+r_int<- ranef(M10)$sujet$"(Intercept)"
 qqnorm(r_int)
 shapiro.test(r_int)
 
@@ -130,12 +135,12 @@ anova(M1, type= 3)
 #second method to calculate interraction contrast
 
 emm_options(lmer.df = "satterthwaite")
-emmeans_out <- emmeans(M3, ~instant_mesure*condition, weights = "show.levels")
+emmeans_out <- emmeans(M10, ~instant_mesure*condition, weights = "show.levels")
 emmeans_out
 plot(emmeans_out)
 pair1 <- pairs(emmeans_out, adjust ="holm")
 summary(pair1)
-pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm", )
+pair2 <- pairs(emmeans_out, by = c("instant_mesure"), adjust = "holm")
 summary(pair2)
 pair3 <- pairs(emmeans_out, by = c("condition"), adjust = "holm")
 summary(pair3)

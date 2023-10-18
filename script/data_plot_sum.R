@@ -12,13 +12,13 @@ library(stringr)
 
 a <- function(x) {colSums(abs(x))}
 
-dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO` <-
-  dfposturalpatchfilt25hz$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[, -c(4, 5)]
+dfpostural100HzBFpat$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`<-
+  dfpostural100HzBFpat$`Bastien Marsan-2022.10.06-15.20.56MIDA2POO`[, -c(4, 5)]
 
 dfsumplacebo <-
-  as.data.frame(do.call(rbind, lapply(dfposturalplacebofilt25hz, a)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpb, a)))
 dfsumpatch <-
-  as.data.frame(do.call(rbind, lapply(dfposturalpatchfilt25hz, a)))
+  as.data.frame(do.call(rbind, lapply(dfpostural100HzBFpat, a)))
 
 #extract information of rownames
 
